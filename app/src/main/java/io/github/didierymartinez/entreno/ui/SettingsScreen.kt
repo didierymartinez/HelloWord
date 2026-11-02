@@ -1,5 +1,6 @@
 package io.github.didierymartinez.entreno.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,12 +23,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.didierymartinez.entreno.Graph
 import io.github.didierymartinez.entreno.data.DayGroup
@@ -37,6 +40,7 @@ import io.github.didierymartinez.entreno.domain.Fmt
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
+    val ctx = LocalContext.current
     fun update(f: (Settings) -> Settings) = Graph.repo.updateSettings(f)
 
     Scaffold(topBar = { BackTopBar("Ajustes", onBack) }) { pad ->
@@ -76,24 +80,24 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
             }
 
             SectionTitle("Bici estática")
-            Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-                Stepper(
-                    "Al inicio (min)",
-                    "${settings.warmupMin}",
-                    { update { it.copy(warmupMin = (it.warmupMin - 1).coerceAtLeast(0)) } },
-                    { update { it.copy(warmupMin = it.warmupMin + 1) } },
-                )
-                Stepper(
-                    "Al final (min)",
-                    "${settings.cooldownMin}",
-                    { update { it.copy(cooldownMin = (it.cooldownMin - 1).coerceAtLeast(0)) } },
-                    { update { it.copy(cooldownMin = it.cooldownMin + 1) } },
-                )
-            }
+            Stepper(
+                "Al inicio (min)",
+                "${settings.warmupMin}",
+                { update { it.copy(warmupMin = (it.warmupMin - 1).coerceAtLeast(0)) } },
+                { update { it.copy(warmupMin = it.warmupMin + 1) } },
+                Modifier.fillMaxWidth(),
+            )
+            Stepper(
+                "Al final (min)",
+                "${settings.cooldownMin}",
+                { update { it.copy(cooldownMin = (it.cooldownMin - 1).coerceAtLeast(0)) } },
+                { update { it.copy(cooldownMin = it.cooldownMin + 1) } },
+                Modifier.fillMaxWidth(),
+            )
 
             SectionTitle("Pesas")
             Stepper(
-                "Descanso para ejercicios nuevos",
+                "Descanso (ej. añadidos)",
                 Fmt.clock(settings.defaultRestSec.toLong()),
                 { update { it.copy(defaultRestSec = (it.defaultRestSec - 15).coerceAtLeast(15)) } },
                 { update { it.copy(defaultRestSec = it.defaultRestSec + 15) } },
@@ -117,6 +121,21 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
                 )
             }
 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Mantener la pantalla encendida")
+                    Text(
+                        "Apagado es mejor si llevas el teléfono en el bolsillo: evita toques sin querer " +
+                            "y Mi Fitness reenvía los avisos al reloj.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(
+                    checked = settings.keepScreenOn,
+                    onCheckedChange = { v -> update { it.copy(keepScreenOn = v) } },
+                )
+            }
+
             SectionTitle("Reloj (Xiaomi Watch S1 Active)")
             Card {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -130,6 +149,14 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
             Button(onClick = { Graph.session.testAlert() }, modifier = Modifier.fillMaxWidth()) {
                 Text("Enviar aviso de prueba al reloj")
             }
+            OutlinedButton(
+                onClick = {
+                    runCatching {
+                        ctx.startActivity(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Abrir ajustes de batería") }
         }
     }
 }

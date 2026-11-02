@@ -87,6 +87,7 @@ data class Settings(
     val defaultRestSec: Int = 90,
     val weightStep: Double = 2.5,
     val warnBeforeRestEnd: Boolean = true,
+    val keepScreenOn: Boolean = false,
 )
 
 // ---------- Sesión en curso ----------

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -72,7 +73,7 @@ private enum class PickerMode { SWAP, ADD }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionScreen(s: ActiveSession, history: List<SessionLog>, settings: Settings) {
-    KeepScreenOn()
+    if (settings.keepScreenOn) KeepScreenOn()
     val now by rememberNow()
     LaunchedEffect(Unit) {
         while (true) {
@@ -304,7 +305,7 @@ private fun RestCard(remainingMs: Long, totalMs: Long) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            CountdownRing(remainingMs, totalMs, "Descanso")
+            CountdownRing(remainingMs, totalMs, "Descanso", diameter = 180.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = { Graph.session.addRest(30) }) { Text("+30 s") }
                 Button(onClick = { Graph.session.skipRest() }) { Text("Saltar descanso") }
@@ -345,20 +346,20 @@ private fun ExerciseCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Stepper(
-                    "Reps",
-                    "${s.draftReps}",
-                    { Graph.session.setDraft(s.draftReps - 1, s.draftWeight) },
-                    { Graph.session.setDraft(s.draftReps + 1, s.draftWeight) },
-                )
-                Stepper(
-                    if (ex?.bodyweight == true && s.draftWeight <= 0.0) "Lastre (kg)" else "Peso (kg)",
-                    Fmt.kg(s.draftWeight),
-                    { Graph.session.setDraft(s.draftReps, s.draftWeight - settings.weightStep) },
-                    { Graph.session.setDraft(s.draftReps, s.draftWeight + settings.weightStep) },
-                )
-            }
+            Stepper(
+                "Reps",
+                "${s.draftReps}",
+                { Graph.session.setDraft(s.draftReps - 1, s.draftWeight) },
+                { Graph.session.setDraft(s.draftReps + 1, s.draftWeight) },
+                Modifier.fillMaxWidth(),
+            )
+            Stepper(
+                if (ex?.bodyweight == true && s.draftWeight <= 0.0) "Lastre (kg)" else "Peso (kg)",
+                Fmt.kg(s.draftWeight),
+                { Graph.session.setDraft(s.draftReps, s.draftWeight - settings.weightStep) },
+                { Graph.session.setDraft(s.draftReps, s.draftWeight + settings.weightStep) },
+                Modifier.fillMaxWidth(),
+            )
             if (item.sets.isNotEmpty()) Text("Hoy: ${Fmt.setsLine(item.sets)}", style = MaterialTheme.typography.bodyMedium)
             last?.let { (session, sets) ->
                 Text("Última vez (${Fmt.day(session.startedAt)}): ${Fmt.setsLine(sets)}", style = MaterialTheme.typography.bodyMedium)
@@ -488,7 +489,10 @@ private fun SummaryPanel(s: ActiveSession, history: List<SessionLog>, now: Long)
             }
         }
         SectionTitle("Músculos trabajados")
-        BodyMap(MapColors.load(Stats.muscleLoad(log.exercises)), Modifier.fillMaxWidth())
+        BodyMap(
+            MapColors.load(Stats.muscleLoad(log.exercises)),
+            Modifier.widthIn(max = 300.dp).align(Alignment.CenterHorizontally),
+        )
         SectionTitle("Ejercicios")
         if (log.exercises.isEmpty()) Text("No se registraron series.")
         log.exercises.forEach { e ->

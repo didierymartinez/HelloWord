@@ -48,9 +48,31 @@ private val OrangeDark = Color(0xFFD84315)
 @Composable
 fun EntrenoTheme(content: @Composable () -> Unit) {
     val scheme = if (isSystemInDarkTheme()) {
-        darkColorScheme(primary = Orange, secondary = Color(0xFFFFB74D), tertiary = Color(0xFF81C784))
+        darkColorScheme(
+            primary = Orange,
+            onPrimary = Color(0xFF3A0B00),
+            primaryContainer = Color(0xFF4A2418),
+            onPrimaryContainer = Color(0xFFFFDBCF),
+            secondary = Color(0xFFFFB74D),
+            secondaryContainer = Color(0xFF3A3328),
+            onSecondaryContainer = Color(0xFFF5E1C8),
+            tertiary = Color(0xFF81C784),
+            tertiaryContainer = Color(0xFF213A26),
+            onTertiaryContainer = Color(0xFFD4F0D6),
+        )
     } else {
-        lightColorScheme(primary = OrangeDark, secondary = Color(0xFFEF6C00), tertiary = Color(0xFF2E7D32))
+        lightColorScheme(
+            primary = OrangeDark,
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFFFDBCF),
+            onPrimaryContainer = Color(0xFF3A0B00),
+            secondary = Color(0xFFEF6C00),
+            secondaryContainer = Color(0xFFFFE8CC),
+            onSecondaryContainer = Color(0xFF2E1A00),
+            tertiary = Color(0xFF2E7D32),
+            tertiaryContainer = Color(0xFFC8E6C9),
+            onTertiaryContainer = Color(0xFF0B2E0F),
+        )
     }
     MaterialTheme(colorScheme = scheme, content = content)
 }
@@ -99,19 +121,21 @@ fun Stepper(
     onPlus: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RoundButton("−", onMinus)
-            Text(
-                value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(min = 76.dp).padding(horizontal = 6.dp),
-            )
-            RoundButton("+", onPlus)
-        }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        RoundButton("−", onMinus)
+        Text(
+            value,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 88.dp).padding(horizontal = 6.dp),
+        )
+        RoundButton("+", onPlus)
     }
 }
 
@@ -126,8 +150,14 @@ private fun RoundButton(text: String, onClick: () -> Unit, size: Dp = 52.dp) {
 }
 
 @Composable
-fun CountdownRing(remainingMs: Long, totalMs: Long, label: String, modifier: Modifier = Modifier) {
-    Box(modifier.size(230.dp), contentAlignment = Alignment.Center) {
+fun CountdownRing(
+    remainingMs: Long,
+    totalMs: Long,
+    label: String,
+    modifier: Modifier = Modifier,
+    diameter: Dp = 230.dp,
+) {
+    Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
             progress = { if (totalMs <= 0) 0f else (remainingMs.toFloat() / totalMs).coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxSize(),

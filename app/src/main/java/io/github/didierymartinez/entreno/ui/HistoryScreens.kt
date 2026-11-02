@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -120,7 +121,7 @@ fun RecoveryScreen(history: List<SessionLog>, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Cuánto hace que trabajaste cada músculo. Enséñaselo al entrenador para decidir qué toca.")
-            BodyMap(MapColors.recovery(muscleDays), Modifier.fillMaxWidth())
+            BodyMap(MapColors.recovery(muscleDays), Modifier.widthIn(max = 340.dp).align(Alignment.CenterHorizontally))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Legend(MapColors.fresh, "≤ 1 día")
                 Legend(MapColors.mid, "2–3 días")
