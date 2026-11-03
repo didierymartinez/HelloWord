@@ -6,9 +6,9 @@ El S1 Active no admite apps propias, así que la app corre en el teléfono y el 
 recibe los avisos como notificaciones (por medio de Mi Fitness): qué serie toca, cuándo
 termina el descanso y cuándo acaba la bici.
 
-| Inicio | Serie | Descanso | Resumen |
-|---|---|---|---|
-| ![Inicio](docs/capturas/home.png) | ![Serie](docs/capturas/strength.png) | ![Descanso](docs/capturas/rest.png) | ![Resumen](docs/capturas/summary.png) |
+| Inicio | Serie | Descanso | Resumen | Modo oscuro |
+|---|---|---|---|---|
+| ![Inicio](docs/capturas/home.png) | ![Serie](docs/capturas/strength.png) | ![Descanso](docs/capturas/rest.png) | ![Resumen](docs/capturas/summary.png) | ![Inicio en modo oscuro](docs/capturas/home-oscuro.png) |
 
 ## Qué hace
 

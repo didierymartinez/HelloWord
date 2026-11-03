@@ -1,6 +1,8 @@
 package io.github.didierymartinez.entreno.domain
 
 import io.github.didierymartinez.entreno.data.SetLog
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -10,11 +12,10 @@ import kotlin.math.roundToLong
 object Fmt {
     private val es: Locale = Locale.forLanguageTag("es")
 
-    /** 57.5 -> "57,5"; 60.0 -> "60". */
-    fun kg(w: Double): String {
-        val r = (w * 10).roundToLong() / 10.0
-        return if (r % 1.0 == 0.0) r.toLong().toString() else r.toString().replace('.', ',')
-    }
+    private val number = DecimalFormat("#,##0.#", DecimalFormatSymbols(es))
+
+    /** 57.5 -> "57,5"; 60.0 -> "60"; 9060.0 -> "9.060". */
+    fun kg(w: Double): String = synchronized(number) { number.format((w * 10).roundToLong() / 10.0) }
 
     /** "10 × 60 kg" o "10 reps" si no hay peso. */
     fun target(reps: Int, weightKg: Double): String =

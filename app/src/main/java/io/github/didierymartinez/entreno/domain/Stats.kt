@@ -6,11 +6,59 @@ import io.github.didierymartinez.entreno.data.ExerciseLog
 import io.github.didierymartinez.entreno.data.Muscle
 import io.github.didierymartinez.entreno.data.SessionLog
 import io.github.didierymartinez.entreno.data.SetLog
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
+
+/** Últimos 7 días (hoy incluido) frente a los 7 anteriores. */
+data class WeekSummary(
+    val sessions: Int,
+    val volumeKg: Double,
+    val previousVolumeKg: Double,
+    /** Volumen por día, del más antiguo a hoy (7 valores). */
+    val dailyVolume: List<Double>,
+    /** Inicial del día para cada barra (L M X J V S D). */
+    val dayInitials: List<String>,
+) {
+    /** Variación en % frente a la semana anterior; null si no hay con qué comparar. */
+    val changePct: Int?
+        get() = if (previousVolumeKg <= 0.0) null else (((volumeKg - previousVolumeKg) / previousVolumeKg) * 100).roundToInt()
+}
 
 object Stats {
+
+    private val dayInitial = mapOf(
+        DayOfWeek.MONDAY to "L", DayOfWeek.TUESDAY to "M", DayOfWeek.WEDNESDAY to "X", DayOfWeek.THURSDAY to "J",
+        DayOfWeek.FRIDAY to "V", DayOfWeek.SATURDAY to "S", DayOfWeek.SUNDAY to "D",
+    )
+
+    fun week(history: List<SessionLog>, now: Long, zone: ZoneId = ZoneId.systemDefault()): WeekSummary {
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
+        fun dayOf(s: SessionLog) = Instant.ofEpochMilli(s.startedAt).atZone(zone).toLocalDate()
+        val thisWeek = history.filter { dayOf(it) in days.first()..today }
+        val prevStart = today.minusDays(13)
+        val prevEnd = today.minusDays(7)
+        val previous = history.filter { dayOf(it) in prevStart..prevEnd }
+        return WeekSummary(
+            sessions = thisWeek.size,
+            volumeKg = volume(thisWeek.flatMap { it.exercises }),
+            previousVolumeKg = volume(previous.flatMap { it.exercises }),
+            dailyVolume = days.map { d -> volume(thisWeek.filter { dayOf(it) == d }.flatMap { it.exercises }) },
+            dayInitials = days.map { dayInitial.getValue(it.dayOfWeek) },
+        )
+    }
+
+    /** Volumen de la última sesión anterior del mismo grupo principal (para comparar en el resumen). */
+    fun previousSameGroupVolume(log: SessionLog, history: List<SessionLog>): Double? {
+        val group = log.groups.firstOrNull() ?: return null
+        return history.filter { it.id != log.id && it.startedAt < log.startedAt && it.groups.firstOrNull() == group }
+            .maxByOrNull { it.startedAt }
+            ?.let { volume(it.exercises) }
+            ?.takeIf { it > 0.0 }
+    }
 
     fun daysBetween(from: Long, to: Long, zone: ZoneId = ZoneId.systemDefault()): Int =
         ChronoUnit.DAYS.between(

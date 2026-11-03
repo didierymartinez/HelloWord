@@ -11,14 +11,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
@@ -42,39 +46,95 @@ import io.github.didierymartinez.entreno.data.Muscle
 import io.github.didierymartinez.entreno.domain.Fmt
 import kotlinx.coroutines.delay
 
-private val Orange = Color(0xFFFF7043)
-private val OrangeDark = Color(0xFFD84315)
+/** Paleta: lavanda claro, morado como acento, naranja para datos y un azul noche para destacar. */
+object Brand {
+    val Purple = Color(0xFF7B6CF6)
+    val PurpleLight = Color(0xFFA99DFF)
+    val Lavender = Color(0xFFEEEDFB)
+    val Orange = Color(0xFFFF8A3D)
+    val OrangeLight = Color(0xFFFFB27A)
+    val Night = Color(0xFF2B2A45)
+    val NightDeep = Color(0xFF1B1A2E)
+    val Ink = Color(0xFF26243A)
+}
 
 @Composable
 fun EntrenoTheme(content: @Composable () -> Unit) {
     val scheme = if (isSystemInDarkTheme()) {
         darkColorScheme(
-            primary = Orange,
-            onPrimary = Color(0xFF3A0B00),
-            primaryContainer = Color(0xFF4A2418),
-            onPrimaryContainer = Color(0xFFFFDBCF),
-            secondary = Color(0xFFFFB74D),
-            secondaryContainer = Color(0xFF3A3328),
-            onSecondaryContainer = Color(0xFFF5E1C8),
-            tertiary = Color(0xFF81C784),
-            tertiaryContainer = Color(0xFF213A26),
-            onTertiaryContainer = Color(0xFFD4F0D6),
+            primary = Brand.PurpleLight,
+            onPrimary = Color(0xFF221A5C),
+            primaryContainer = Color(0xFF332D5E),
+            onPrimaryContainer = Color(0xFFE6E1FF),
+            secondary = Brand.OrangeLight,
+            onSecondary = Color(0xFF3D1C00),
+            secondaryContainer = Color(0xFF3A2C3A),
+            onSecondaryContainer = Color(0xFFFFDCC4),
+            tertiary = Color(0xFF8FD3B0),
+            tertiaryContainer = Color(0xFF2C2B48),
+            onTertiaryContainer = Color(0xFFE6E4FF),
+            background = Color(0xFF131221),
+            onBackground = Color(0xFFE7E5F5),
+            surface = Color(0xFF131221),
+            onSurface = Color(0xFFE7E5F5),
+            surfaceVariant = Color(0xFF2A2840),
+            onSurfaceVariant = Color(0xFFBDB9D6),
+            surfaceContainerLowest = Color(0xFF0E0D19),
+            surfaceContainerLow = Color(0xFF1A1929),
+            surfaceContainer = Color(0xFF1E1D2F),
+            surfaceContainerHigh = Color(0xFF242338),
+            surfaceContainerHighest = Color(0xFF2E2C44),
+            outline = Color(0xFF6E6A8A),
+            outlineVariant = Color(0xFF3B3955),
         )
     } else {
         lightColorScheme(
-            primary = OrangeDark,
+            primary = Brand.Purple,
             onPrimary = Color.White,
-            primaryContainer = Color(0xFFFFDBCF),
-            onPrimaryContainer = Color(0xFF3A0B00),
-            secondary = Color(0xFFEF6C00),
-            secondaryContainer = Color(0xFFFFE8CC),
-            onSecondaryContainer = Color(0xFF2E1A00),
-            tertiary = Color(0xFF2E7D32),
-            tertiaryContainer = Color(0xFFC8E6C9),
-            onTertiaryContainer = Color(0xFF0B2E0F),
+            primaryContainer = Color(0xFFE8E4FF),
+            onPrimaryContainer = Color(0xFF221A5C),
+            secondary = Color(0xFFE8711F),
+            onSecondary = Color.White,
+            secondaryContainer = Color(0xFFFFEBDD),
+            onSecondaryContainer = Color(0xFF3D1C00),
+            tertiary = Color(0xFF2E8B62),
+            tertiaryContainer = Brand.Night,
+            onTertiaryContainer = Color.White,
+            background = Brand.Lavender,
+            onBackground = Brand.Ink,
+            surface = Brand.Lavender,
+            onSurface = Brand.Ink,
+            surfaceVariant = Color(0xFFE6E4F4),
+            onSurfaceVariant = Color(0xFF6B6886),
+            surfaceContainerLowest = Color.White,
+            surfaceContainerLow = Color(0xFFFAF9FF),
+            surfaceContainer = Color.White,
+            surfaceContainerHigh = Color.White,
+            surfaceContainerHighest = Color(0xFFF3F1FD),
+            outline = Color(0xFFB4B1CC),
+            outlineVariant = Color(0xFFDDDAEE),
         )
     }
-    MaterialTheme(colorScheme = scheme, content = content)
+    val base = Typography()
+    val typography = base.copy(
+        displayLarge = base.displayLarge.copy(fontWeight = FontWeight.Black),
+        displayMedium = base.displayMedium.copy(fontWeight = FontWeight.Black),
+        displaySmall = base.displaySmall.copy(fontWeight = FontWeight.Black),
+        headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+        headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+        headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.Bold),
+        titleLarge = base.titleLarge.copy(fontWeight = FontWeight.Bold),
+        labelSmall = base.labelSmall.copy(letterSpacing = 0.8.sp),
+        labelMedium = base.labelMedium.copy(letterSpacing = 0.8.sp),
+    )
+    val shapes = Shapes(
+        extraSmall = RoundedCornerShape(10.dp),
+        small = RoundedCornerShape(16.dp),
+        medium = RoundedCornerShape(24.dp),
+        large = RoundedCornerShape(28.dp),
+        extraLarge = RoundedCornerShape(32.dp),
+    )
+    MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes, content = content)
 }
 
 object MapColors {
@@ -146,6 +206,10 @@ private fun RoundButton(text: String, onClick: () -> Unit, size: Dp = 52.dp) {
         modifier = Modifier.size(size),
         shape = CircleShape,
         contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.primary,
+        ),
     ) { Text(text, fontSize = 26.sp) }
 }
 

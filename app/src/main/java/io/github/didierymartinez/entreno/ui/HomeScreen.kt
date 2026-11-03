@@ -2,6 +2,14 @@ package io.github.didierymartinez.entreno.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -52,59 +60,104 @@ import io.github.didierymartinez.entreno.data.Settings
 import io.github.didierymartinez.entreno.domain.Fmt
 import io.github.didierymartinez.entreno.domain.Stats
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(history: List<SessionLog>, settings: Settings, onNavigate: (Screen) -> Unit) {
     val ctx = LocalContext.current
     val now = remember(history) { System.currentTimeMillis() }
     val suggestion = remember(history, settings) { Stats.suggest(settings.rotation, history, now) }
     val groupDays = remember(history) { Stats.groupDaysSince(history, now) }
+    val week = remember(history) { Stats.week(history, now) }
     val recent = remember(history) { history.sortedByDescending { it.startedAt }.take(7) }
+    val lastHeart = remember(history) { history.filter { it.heart != null }.maxByOrNull { it.startedAt }?.heart }
+    val muscleDays = remember(history) { Stats.muscleDaysSince(history, now) }
     var picking by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Entreno") },
-                actions = {
-                    IconButton(onClick = { onNavigate(Screen.SETTINGS) }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Ajustes")
-                    }
-                },
-            )
-        },
-    ) { pad ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { pad ->
         LazyColumn(
             Modifier.padding(pad).fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                TodayCard(
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Overline("Entreno")
+                        Text("RESUMEN DE\nENTRENO", style = MaterialTheme.typography.headlineMedium)
+                    }
+                    IconButton(
+                        onClick = { onNavigate(Screen.SETTINGS) },
+                        modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainer),
+                    ) { Icon(Icons.Default.Settings, contentDescription = "Ajustes") }
+                }
+            }
+            item {
+                TodayHero(
+                    sessionNumber = history.size + 1,
                     suggestion = suggestion,
-                    groupDays = groupDays,
-                    rotation = settings.rotation,
+                    daysAgo = suggestion?.let { groupDays[it] },
                     onStart = { Graph.session.start(listOf(it)) },
                     onPick = { picking = true },
                 )
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { onNavigate(Screen.RECOVERY) }, Modifier.weight(1f)) { Text("Mapa de descanso") }
-                    OutlinedButton(onClick = { onNavigate(Screen.HISTORY) }, Modifier.weight(1f)) { Text("Historial") }
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    StatTile(
+                        label = "Entrenos",
+                        value = "${week.sessions}",
+                        sub = "en los últimos 7 días",
+                        dark = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    StatTile(
+                        label = "Volumen diario",
+                        value = "",
+                        sub = "kg por día · 7 días",
+                        modifier = Modifier.weight(1.25f),
+                    ) {
+                        MiniBars(week.dailyVolume, week.dayInitials, Modifier.padding(top = 10.dp))
+                    }
                 }
             }
             item {
-                OutlinedButton(
-                    onClick = { shareText(ctx, ShareText.recent(history, now)) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Compartir con el entrenador")
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    StatTile(
+                        label = "Pulso medio",
+                        value = lastHeart?.overall?.avg?.toString() ?: "—",
+                        unit = if (lastHeart != null) "ppm" else null,
+                        sub = lastHeart?.let { "máx ${it.overall.max} · último entreno" } ?: "conecta Health Connect",
+                        modifier = Modifier.weight(1f),
+                        onClick = if (lastHeart == null) ({ onNavigate(Screen.SETTINGS) }) else null,
+                    )
+                    StatTile(
+                        label = "Descanso",
+                        value = "",
+                        sub = "Toca para ver el mapa",
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigate(Screen.RECOVERY) },
+                    ) {
+                        BodyMap(MapColors.recovery(muscleDays), Modifier.fillMaxWidth().padding(top = 4.dp))
+                    }
                 }
             }
-            item { SectionTitle("Últimos días", Modifier.padding(top = 8.dp)) }
+            item {
+                SoftCard(Modifier.fillMaxWidth()) {
+                    BigNumber(
+                        value = Fmt.kg(week.volumeKg),
+                        label = "kg levantados esta semana",
+                        delta = week.changePct,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        RoundAction(Icons.Default.Share, "Compartir", { shareText(ctx, ShareText.recent(history, now)) })
+                        RoundAction(Icons.AutoMirrored.Filled.List, "Historial", { onNavigate(Screen.HISTORY) })
+                        RoundAction(Icons.Default.Favorite, "Descanso", { onNavigate(Screen.RECOVERY) })
+                    }
+                }
+            }
+            item { Overline("Últimos días", Modifier.padding(top = 6.dp)) }
             if (recent.isEmpty()) {
                 item { Text("Aún no hay entrenamientos. ¡Empieza el primero!") }
             }
@@ -124,40 +177,47 @@ fun HomeScreen(history: List<SessionLog>, settings: Settings, onNavigate: (Scree
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TodayCard(
+private fun TodayHero(
+    sessionNumber: Int,
     suggestion: DayGroup?,
-    groupDays: Map<DayGroup, Int>,
-    rotation: List<DayGroup>,
+    daysAgo: Int?,
     onStart: (DayGroup) -> Unit,
     onPick: () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-        Column(Modifier.padding(20.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("HOY TOCA", style = MaterialTheme.typography.labelLarge)
+    HeroCard {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("SESIÓN ", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            Text("%02d".format(sessionNumber), style = MaterialTheme.typography.headlineMedium, color = Color.White)
+        }
+        Text(
+            if (suggestion != null) "HOY TOCA\n${suggestion.label.uppercase()}" else "¿QUÉ\nENTRENAMOS?",
+            style = MaterialTheme.typography.displaySmall,
+            color = Color.White,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Overline(
+            if (suggestion != null) "Plan flexible · última vez ${Fmt.daysAgo(daysAgo)}" else "Configura tu rotación en ajustes",
+            color = Color.White.copy(alpha = 0.85f),
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(top = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             if (suggestion != null) {
-                Text(suggestion.label, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                Text("Última vez: ${Fmt.daysAgo(groupDays[suggestion])}")
-                Button(onClick = { onStart(suggestion) }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Button(
+                    onClick = { onStart(suggestion) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Brand.Purple),
+                    modifier = Modifier.height(52.dp),
+                ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text("Empezar", style = MaterialTheme.typography.titleMedium)
                 }
-            } else {
-                Text("Configura tu rotación en Ajustes, o elige un grupo.")
             }
-            TextButton(onClick = onPick, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Elegir otro grupo")
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rotation.forEach { g ->
-                    val d = groupDays[g]
-                    Text(
-                        "${g.label}: ${if (d == null) "—" else "${d} d"}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+            TextButton(onClick = onPick, colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
+                Text(if (suggestion != null) "Elegir otro grupo" else "Elegir grupo")
             }
         }
     }
@@ -165,19 +225,25 @@ private fun TodayCard(
 
 @Composable
 private fun SessionRow(s: SessionLog, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp)) {
-            Text(
-                "${Fmt.day(s.startedAt)} · ${s.groups.joinToString(" + ") { it.label }}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                "${s.exercises.size} ejercicios · ${Stats.setCount(s.exercises)} series · " +
-                    Fmt.minutes(((s.endedAt - s.startedAt) / 1000).toInt()) +
-                    (s.heart?.let { " · ❤️ ${it.overall.avg} ppm" } ?: ""),
-                style = MaterialTheme.typography.bodySmall,
-            )
+    SoftCard(Modifier.fillMaxWidth(), onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Overline(Fmt.day(s.startedAt))
+                Text(
+                    s.groups.joinToString(" + ") { it.label },
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    "${Stats.setCount(s.exercises)} series · " + Fmt.minutes(((s.endedAt - s.startedAt) / 1000).toInt()) +
+                        (s.heart?.let { " · ❤️ ${it.overall.avg} ppm" } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(Fmt.kg(Stats.volume(s.exercises)), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                Overline("kg")
+            }
         }
     }
 }

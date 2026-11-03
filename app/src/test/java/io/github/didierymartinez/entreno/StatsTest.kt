@@ -86,9 +86,38 @@ class StatsTest {
     fun `formato de pesos y tiempos`() {
         assertEquals("57,5", Fmt.kg(57.5))
         assertEquals("60", Fmt.kg(60.0))
+        assertEquals("9.060", Fmt.kg(9060.0))
         assertEquals("10 × 60 kg", Fmt.target(10, 60.0))
         assertEquals("12 reps", Fmt.target(12, 0.0))
         assertEquals("1:30", Fmt.clock(90))
         assertEquals("1:05:00", Fmt.clock(3900))
+    }
+
+    @Test
+    fun `resumen semanal compara con la semana anterior`() {
+        val h = listOf(
+            log("a", 0, DayGroup.PECHO, "press_banca" to 60.0),   // 600 kg hoy
+            log("b", 3, DayGroup.ESPALDA, "remo_barra" to 40.0),  // 400 kg
+            log("c", 9, DayGroup.PECHO, "press_banca" to 50.0),   // 500 kg semana anterior
+            log("d", 20, DayGroup.PIERNA, "sentadilla" to 80.0),  // fuera de las dos semanas
+        )
+        val w = Stats.week(h, now, utc)
+        assertEquals(2, w.sessions)
+        assertEquals(1000.0, w.volumeKg, 0.0)
+        assertEquals(500.0, w.previousVolumeKg, 0.0)
+        assertEquals(100, w.changePct)
+        assertEquals(7, w.dailyVolume.size)
+        assertEquals(600.0, w.dailyVolume.last(), 0.0)
+        assertEquals(400.0, w.dailyVolume[3], 0.0)
+        assertEquals(7, w.dayInitials.size)
+    }
+
+    @Test
+    fun `volumen de la ultima sesion del mismo grupo`() {
+        val old = log("a", 7, DayGroup.PECHO, "press_banca" to 50.0)
+        val other = log("b", 3, DayGroup.ESPALDA, "remo_barra" to 40.0)
+        val today = log("c", 0, DayGroup.PECHO, "press_banca" to 60.0)
+        assertEquals(500.0, Stats.previousSameGroupVolume(today, listOf(old, other, today))!!, 0.0)
+        assertEquals(null, Stats.previousSameGroupVolume(other, listOf(old, other)))
     }
 }

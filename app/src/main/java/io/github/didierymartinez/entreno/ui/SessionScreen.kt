@@ -50,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -465,54 +466,83 @@ private fun PickerRow(ex: Exercise, onPick: (Exercise) -> Unit) {
 
 // ---------- Resumen ----------
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SummaryPanel(s: ActiveSession, history: List<SessionLog>, now: Long) {
     val log = remember(s) { SessionEngine.toLog(s, s.endedAt ?: now) }
     val prs = remember(log, history) { Stats.prs(log, history) }
+    val volume = remember(log) { Stats.volume(log.exercises) }
+    val previous = remember(log, history) { Stats.previousSameGroupVolume(log, history) }
+    val change = previous?.let { (((volume - it) / it) * 100).toInt() }
     var heart by remember(log.id) { mutableStateOf<HeartData?>(null) }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("¡Sesión terminada!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Stat("Duración", Fmt.minutes(((log.endedAt - log.startedAt) / 1000).toInt()))
-            Stat("Series", "${Stats.setCount(log.exercises)}")
-            Stat("Volumen", "${Fmt.kg(Stats.volume(log.exercises))} kg")
-            log.warmup?.let { Stat("Bici inicio", Fmt.minutes(it.durationSec)) }
-            log.cooldown?.let { Stat("Bici final", Fmt.minutes(it.durationSec)) }
+        HeroCard {
+            Overline("¡Bien hecho!", color = Color.White.copy(alpha = 0.9f))
+            Text(
+                "SESIÓN DE\n${log.groups.joinToString(" + ") { it.label.uppercase() }}",
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.White,
+            )
+            Overline(
+                when {
+                    change == null -> "Primera sesión de este grupo"
+                    change >= 0 -> "+$change% de volumen frente a la última vez"
+                    else -> "$change% de volumen frente a la última vez"
+                },
+                color = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
+        SoftCard(Modifier.fillMaxWidth()) {
+            BigNumber(Fmt.kg(volume), "kg levantados hoy", change, Modifier.fillMaxWidth())
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            StatTile(
+                "Duración",
+                Fmt.minutes(((log.endedAt - log.startedAt) / 1000).toInt()).removeSuffix(" min"),
+                unit = "min",
+                dark = true,
+                modifier = Modifier.weight(1f),
+            )
+            StatTile("Series", "${Stats.setCount(log.exercises)}", sub = "${log.exercises.size} ejercicios", modifier = Modifier.weight(1f))
+        }
+        if (log.warmup != null || log.cooldown != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                log.warmup?.let { StatTile("Bici inicio", "${(it.durationSec + 30) / 60}", unit = "min", modifier = Modifier.weight(1f)) }
+                log.cooldown?.let { StatTile("Bici final", "${(it.durationSec + 30) / 60}", unit = "min", modifier = Modifier.weight(1f)) }
+            }
         }
         if (prs.isNotEmpty()) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
-                Column(Modifier.padding(14.dp).fillMaxWidth()) {
-                    prs.forEach { (id, w) -> Text("🏆 Récord: ${Catalog.name(id)} · ${Fmt.kg(w)} kg", fontWeight = FontWeight.SemiBold) }
+            SoftCard(Modifier.fillMaxWidth(), container = MaterialTheme.colorScheme.secondaryContainer) {
+                Overline("Récords personales", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                prs.forEach { (id, w) ->
+                    Text("🏆 ${Catalog.name(id)} · ${Fmt.kg(w)} kg", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
         }
         HeartSection(log, saved = null, onFound = { heart = it })
-        SectionTitle("Músculos trabajados")
-        BodyMap(
-            MapColors.load(Stats.muscleLoad(log.exercises)),
-            Modifier.widthIn(max = 300.dp).align(Alignment.CenterHorizontally),
-        )
-        SectionTitle("Ejercicios")
-        if (log.exercises.isEmpty()) Text("No se registraron series.")
-        log.exercises.forEach { e ->
-            Column {
-                Text(Catalog.name(e.exerciseId), fontWeight = FontWeight.Medium)
-                Text(Fmt.setsLine(e.sets), style = MaterialTheme.typography.bodySmall)
+        SoftCard(Modifier.fillMaxWidth()) {
+            Overline("Músculos trabajados")
+            BodyMap(
+                MapColors.load(Stats.muscleLoad(log.exercises)),
+                Modifier.widthIn(max = 280.dp).align(Alignment.CenterHorizontally).padding(top = 8.dp),
+            )
+        }
+        SoftCard(Modifier.fillMaxWidth()) {
+            Overline("Ejercicios")
+            if (log.exercises.isEmpty()) Text("No se registraron series.")
+            log.exercises.forEach { e ->
+                Column(Modifier.padding(top = 8.dp)) {
+                    Text(Catalog.name(e.exerciseId), style = MaterialTheme.typography.titleMedium)
+                    Text(Fmt.setsLine(e.sets), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
-        Button(onClick = { Graph.session.saveAndClose(heart) }, Modifier.fillMaxWidth().height(56.dp)) { Text("Guardar sesión") }
+        Button(onClick = { Graph.session.saveAndClose(heart) }, Modifier.fillMaxWidth().height(56.dp)) {
+            Text("Guardar sesión", style = MaterialTheme.typography.titleMedium)
+        }
         OutlinedButton(onClick = { Graph.session.reopen() }, Modifier.fillMaxWidth()) { Text("Seguir entrenando") }
-    }
-}
-
-@Composable
-private fun Stat(label: String, value: String) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     }
 }
