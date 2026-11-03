@@ -58,6 +58,7 @@ import io.github.didierymartinez.entreno.data.ActiveSession
 import io.github.didierymartinez.entreno.data.Catalog
 import io.github.didierymartinez.entreno.data.DayGroup
 import io.github.didierymartinez.entreno.data.Exercise
+import io.github.didierymartinez.entreno.data.HeartData
 import io.github.didierymartinez.entreno.data.Phase
 import io.github.didierymartinez.entreno.data.PlanItem
 import io.github.didierymartinez.entreno.data.SessionLog
@@ -469,6 +470,7 @@ private fun PickerRow(ex: Exercise, onPick: (Exercise) -> Unit) {
 private fun SummaryPanel(s: ActiveSession, history: List<SessionLog>, now: Long) {
     val log = remember(s) { SessionEngine.toLog(s, s.endedAt ?: now) }
     val prs = remember(log, history) { Stats.prs(log, history) }
+    var heart by remember(log.id) { mutableStateOf<HeartData?>(null) }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -488,6 +490,7 @@ private fun SummaryPanel(s: ActiveSession, history: List<SessionLog>, now: Long)
                 }
             }
         }
+        HeartSection(log, saved = null, onFound = { heart = it })
         SectionTitle("Músculos trabajados")
         BodyMap(
             MapColors.load(Stats.muscleLoad(log.exercises)),
@@ -501,7 +504,7 @@ private fun SummaryPanel(s: ActiveSession, history: List<SessionLog>, now: Long)
                 Text(Fmt.setsLine(e.sets), style = MaterialTheme.typography.bodySmall)
             }
         }
-        Button(onClick = { Graph.session.saveAndClose() }, Modifier.fillMaxWidth().height(56.dp)) { Text("Guardar sesión") }
+        Button(onClick = { Graph.session.saveAndClose(heart) }, Modifier.fillMaxWidth().height(56.dp)) { Text("Guardar sesión") }
         OutlinedButton(onClick = { Graph.session.reopen() }, Modifier.fillMaxWidth()) { Text("Seguir entrenando") }
     }
 }

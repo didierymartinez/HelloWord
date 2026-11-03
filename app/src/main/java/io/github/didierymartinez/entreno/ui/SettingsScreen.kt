@@ -1,6 +1,15 @@
 package io.github.didierymartinez.entreno.ui
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontWeight
+import io.github.didierymartinez.entreno.session.HealthConnect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -157,8 +166,54 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Abrir ajustes de batería") }
+
+            HealthSettings()
         }
     }
+}
+
+/** Estado de Health Connect y pasos para que el pulso del reloj llegue a la app. */
+@Composable
+private fun HealthSettings() {
+    val ctx = LocalContext.current
+    val hc = Graph.health
+    var refreshKey by remember { mutableIntStateOf(0) }
+    var status by remember { mutableStateOf("Comprobando…") }
+    var connected by remember { mutableStateOf(false) }
+    val askPermission = rememberLauncherForActivityResult(hc.permissionContract()) { refreshKey++ }
+
+    LaunchedEffect(refreshKey) {
+        val availability = hc.availability()
+        connected = availability == HealthConnect.Availability.AVAILABLE &&
+            runCatching { hc.hasHeartPermission() }.getOrDefault(false)
+        status = when {
+            availability == HealthConnect.Availability.NOT_INSTALLED -> "No instalado"
+            availability == HealthConnect.Availability.NEEDS_UPDATE -> "Necesita actualizarse"
+            connected -> "Conectado ✓"
+            else -> "Sin permiso"
+        }
+    }
+
+    SectionTitle("Pulso (Health Connect)")
+    Text("Estado: $status", fontWeight = FontWeight.SemiBold)
+    Card {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("El pulso llega así: reloj → Mi Fitness → Health Connect → Entreno.")
+            Text("1. En Mi Fitness → Perfil → Health Connect, activa la frecuencia cardíaca y las calorías.")
+            Text("2. Aquí abajo, conecta Entreno y permite leer la frecuencia cardíaca.")
+            Text("3. En el gym, inicia también \"Fuerza\" o \"Bicicleta estática\" en el reloj: así mide el pulso más seguido.")
+            Text("4. Después de entrenar, abre Mi Fitness para que sincronice. El pulso aparece en el resumen o en el Historial.")
+        }
+    }
+    if (!connected) {
+        Button(onClick = { askPermission.launch(hc.permissions) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Conectar Health Connect")
+        }
+    }
+    OutlinedButton(
+        onClick = { runCatching { ctx.startActivity(hc.openIntent()) } },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("Abrir Health Connect") }
 }
 
 private fun <T> List<T>.move(index: Int, delta: Int): List<T> {

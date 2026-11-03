@@ -64,6 +64,31 @@ data class CardioLog(
     val durationSec: Int,
     val distanceKm: Double? = null,
     val kcal: Int? = null,
+    /** Inicio y fin reales del bloque (para separar el pulso por tramos). */
+    val startedAt: Long? = null,
+    val endedAt: Long? = null,
+)
+
+/** Una medición de pulso (ya promediada en tramos cortos). */
+@Serializable
+data class HrPoint(val t: Long, val bpm: Int)
+
+/** Pulso medio / máximo / mínimo de un tramo, calculado con los datos originales. */
+@Serializable
+data class HrStat(val label: String, val avg: Int, val max: Int, val min: Int)
+
+/** Pulso y calorías de la sesión leídos de Health Connect (vienen del reloj vía Mi Fitness). */
+@Serializable
+data class HeartData(
+    /** Puntos promediados cada 15 s, para la gráfica. */
+    val points: List<HrPoint>,
+    /** Toda la sesión. */
+    val overall: HrStat,
+    /** Bici inicio, pesas, bici final. */
+    val segments: List<HrStat> = emptyList(),
+    val activeKcal: Int? = null,
+    val totalKcal: Int? = null,
+    val fetchedAt: Long,
 )
 
 @Serializable
@@ -75,6 +100,7 @@ data class SessionLog(
     val warmup: CardioLog? = null,
     val cooldown: CardioLog? = null,
     val exercises: List<ExerciseLog> = emptyList(),
+    val heart: HeartData? = null,
 )
 
 @Serializable
@@ -140,6 +166,8 @@ data class ActiveSession(
     val draftReps: Int = 0,
     val draftWeight: Double = 0.0,
     val endedAt: Long? = null,
+    /** Cuándo arrancó la bici en curso (las pausas cuentan dentro del tramo). */
+    val cardioStartedAt: Long? = null,
 )
 
 fun ActiveSession.current(): PlanItem? = plan.firstOrNull { it.uid == currentUid }

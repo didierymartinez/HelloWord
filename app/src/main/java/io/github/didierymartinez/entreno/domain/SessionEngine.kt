@@ -72,7 +72,11 @@ object SessionEngine {
 
     fun startCardio(s: ActiveSession, now: Long, minutes: Int): ActiveSession {
         val total = maxOf(1, minutes) * 60
-        return s.copy(timer = Timer(totalSec = total, endAt = now + total * 1000L), cardioForm = false)
+        return s.copy(
+            timer = Timer(totalSec = total, endAt = now + total * 1000L),
+            cardioForm = false,
+            cardioStartedAt = now,
+        )
     }
 
     fun pause(s: ActiveSession, now: Long): ActiveSession {
@@ -90,11 +94,16 @@ object SessionEngine {
     fun finishCardio(s: ActiveSession, now: Long): ActiveSession {
         val t = s.timer
         val elapsed = if (t == null) 0 else ((t.totalSec * 1000L - t.remaining(now)) / 1000L).toInt()
-        return when (s.phase) {
-            Phase.WARMUP -> s.copy(warmup = CardioLog(CardioKind.WARMUP, elapsed), timer = null, cardioForm = true)
-            Phase.COOLDOWN -> s.copy(cooldown = CardioLog(CardioKind.COOLDOWN, elapsed), timer = null, cardioForm = true)
-            else -> s
+        // Si el tick llega tarde, el tramo termina cuando acabó el temporizador, no después.
+        val end = t?.endAt?.let { minOf(it, now) } ?: now
+        val kind = when (s.phase) {
+            Phase.WARMUP -> CardioKind.WARMUP
+            Phase.COOLDOWN -> CardioKind.COOLDOWN
+            else -> return s
         }
+        val log = CardioLog(kind, elapsed, startedAt = s.cardioStartedAt, endedAt = end)
+        val base = s.copy(timer = null, cardioForm = true, cardioStartedAt = null)
+        return if (kind == CardioKind.WARMUP) base.copy(warmup = log) else base.copy(cooldown = log)
     }
 
     fun saveCardioForm(s: ActiveSession, km: Double?, kcal: Int?, now: Long): ActiveSession {

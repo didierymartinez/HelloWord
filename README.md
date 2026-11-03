@@ -26,6 +26,9 @@ termina el descanso y cuándo acaba la bici.
 - **Para el entrenador:** historial, mapa de descanso muscular y un botón para compartir
   los últimos 14 días por WhatsApp.
 - **Resumen:** duración, series, volumen, músculos trabajados y récords personales.
+- **Pulso del reloj:** pulso medio y máximo de la bici inicial, las pesas y la bici final,
+  calorías activas y una gráfica con una marca por cada serie. Llega desde Health Connect
+  después del entrenamiento, no en tiempo real.
 
 ## Instalación
 
@@ -46,12 +49,22 @@ termina el descanso y cuándo acaba la bici.
 > los avisos con la pantalla apagada y así evitas toques sin querer en el bolsillo.
 > Desde la pantalla de bloqueo puedes marcar "✓ Serie hecha", "+30 s" o "Saltar".
 
-**Pulso y calorías:** la app no puede leer el pulso del reloj. Si los quieres, inicia
-también en el reloj "Bicicleta estática" o "Entrenamiento de fuerza".
+## Pulso y calorías (Health Connect)
+
+El pulso llega así: **reloj → Mi Fitness → Health Connect → Entreno**.
+
+1. **Mi Fitness → Perfil → Health Connect:** activa la frecuencia cardíaca y las calorías.
+2. **Entreno → Ajustes → Conectar Health Connect:** permite leer la frecuencia cardíaca.
+3. En el gym, inicia también "Fuerza" o "Bicicleta estática" en el reloj para que mida el
+   pulso más seguido.
+4. Al terminar, abre Mi Fitness para que sincronice. El pulso aparece en el resumen
+   (botón "Actualizar") o en el Historial. Se guarda en la sesión una vez encontrado.
+
+![Pulso en el historial](docs/capturas/pulso.png)
 
 ## Compilar
 
-Requiere JDK 17+ y el SDK de Android (API 35).
+Requiere JDK 17+ y el SDK de Android (API 36).
 
 ```bash
 ./gradlew testDebugUnitTest   # tests

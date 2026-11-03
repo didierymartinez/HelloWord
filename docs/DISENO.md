@@ -19,7 +19,9 @@
 | Rotación en vez de calendario | Si un día no va, la sugerencia sigue en orden. Se saltan los grupos trabajados hace menos de 2 días. |
 | Plantillas por grupo y plan editable en vivo | El plan es solo una propuesta: se cambia, añade, salta y reordena durante la sesión. Lo que se guarda es lo que se hizo de verdad. |
 | Datos en JSON local | Simple y sin cuentas. Escritura atómica, y un archivo dañado se aparta en vez de sobrescribirse. |
-| Lógica pura en `SessionEngine` y `Stats` | Se prueba con tests de JVM sin emulador. |
+| Lógica pura en `SessionEngine`, `Stats` y `Heart` | Se prueba con tests de JVM sin emulador. |
+| Pulso desde Health Connect, solo lectura y al ver la sesión | El S1 Active no da el pulso en vivo. Mi Fitness lo copia a Health Connect al sincronizar, así que se lee después de entrenar y se guarda en la sesión. |
+| Estadísticas del pulso con los datos originales, gráfica con promedios de 15 s | Promediar aplana los picos de cada serie. Así el máximo es exacto y el historial no crece demasiado (unos 6 KB por sesión). |
 
 ## Estructura
 
@@ -27,7 +29,8 @@
 app/src/main/java/io/github/didierymartinez/entreno/
 ├── data/      Modelo, catálogo de ejercicios y plantillas, repositorio JSON
 ├── domain/    SessionEngine (máquina de estados de la sesión), Stats, formato
-├── session/   SessionManager (estado compartido), WorkoutService (primer plano), Notifier
+├── session/   SessionManager (estado compartido), WorkoutService (primer plano), Notifier,
+│              HealthConnect (lectura de pulso y calorías)
 └── ui/        Pantallas Compose: inicio, sesión, historial, mapa de descanso, ajustes
 ```
 
@@ -45,7 +48,10 @@ Fases de la sesión: `WARMUP → STRENGTH ⇄ REST → COOLDOWN → SUMMARY`.
 
 ## Limitaciones conocidas
 
-- **Sin pulso en la app:** el S1 Active no comparte el pulso en tiempo real con otras apps.
+- **Pulso solo después de entrenar:** el S1 Active no comparte el pulso en tiempo real con
+  otras apps. Llega por Health Connect cuando Mi Fitness sincroniza.
+- **Health Connect solo deja leer los 30 días anteriores al permiso.** Las sesiones más
+  antiguas que eso no tendrán pulso.
 - **Sin conteo automático de repeticiones:** no hay acceso al acelerómetro del reloj.
 - **Marcar la serie se hace en el teléfono,** en la app o en la notificación de la pantalla de
   bloqueo. Los botones de las notificaciones no se pueden pulsar desde el reloj.
@@ -54,8 +60,7 @@ Fases de la sesión: `WARMUP → STRENGTH ⇄ REST → COOLDOWN → SUMMARY`.
 
 ## Próximos pasos
 
-1. **Health Connect:** importar el pulso y las calorías de las sesiones del reloj
-   (Mi Fitness → Health Connect) y unirlos a cada entreno por hora.
-2. **Editor de plantillas** por grupo (ejercicios, series, reps y descanso por defecto).
-3. **Gráficas de progreso** por ejercicio (peso máximo y volumen semanal por músculo).
+1. **Editor de plantillas** por grupo (ejercicios, series, reps y descanso por defecto).
+2. **Gráficas de progreso** por ejercicio (peso máximo y volumen semanal por músculo).
+3. **Zonas de pulso** (con la edad o el pulso máximo) y tiempo en cada zona.
 4. Exportar e importar el historial (copia de seguridad).

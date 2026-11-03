@@ -68,7 +68,8 @@ fun HistoryScreen(history: List<SessionLog>, onBack: () -> Unit) {
                         )
                         Text(
                             "${Fmt.minutes(((s.endedAt - s.startedAt) / 1000).toInt())} · " +
-                                "${Stats.setCount(s.exercises)} series · ${Fmt.kg(Stats.volume(s.exercises))} kg de volumen",
+                                "${Stats.setCount(s.exercises)} series · ${Fmt.kg(Stats.volume(s.exercises))} kg de volumen" +
+                                (s.heart?.let { " · ❤️ ${it.overall.avg}/${it.overall.max}" } ?: ""),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         if (open) {
@@ -79,6 +80,7 @@ fun HistoryScreen(history: List<SessionLog>, onBack: () -> Unit) {
                                 Text(Fmt.setsLine(e.sets), style = MaterialTheme.typography.bodySmall)
                             }
                             s.cooldown?.let { Text(cardioLine("🚴 Bici final", it)) }
+                            HeartSection(s, saved = s.heart, onFound = { Graph.repo.updateHeart(s.id, it) })
                             TextButton(onClick = { toDelete = s }) { Text("Borrar sesión") }
                         }
                     }

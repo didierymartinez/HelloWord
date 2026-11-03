@@ -3,6 +3,7 @@ package io.github.didierymartinez.entreno.session
 import android.content.Context
 import io.github.didierymartinez.entreno.data.ActiveSession
 import io.github.didierymartinez.entreno.data.DayGroup
+import io.github.didierymartinez.entreno.data.HeartData
 import io.github.didierymartinez.entreno.data.Phase
 import io.github.didierymartinez.entreno.data.Repository
 import io.github.didierymartinez.entreno.domain.Alert
@@ -85,9 +86,10 @@ class SessionManager(
         WorkoutService.start(ctx)
     }
 
-    fun saveAndClose() {
+    /** [heart]: pulso ya leído en el resumen, si Mi Fitness ya lo había sincronizado. */
+    fun saveAndClose(heart: HeartData? = null) {
         val s = _state.value ?: return
-        repo.addSession(SessionEngine.toLog(s, clock()))
+        repo.addSession(SessionEngine.toLog(s, clock()).copy(heart = heart))
         clear()
     }
 

@@ -174,7 +174,8 @@ private fun SessionRow(s: SessionLog, onClick: () -> Unit) {
             )
             Text(
                 "${s.exercises.size} ejercicios · ${Stats.setCount(s.exercises)} series · " +
-                    Fmt.minutes(((s.endedAt - s.startedAt) / 1000).toInt()),
+                    Fmt.minutes(((s.endedAt - s.startedAt) / 1000).toInt()) +
+                    (s.heart?.let { " · ❤️ ${it.overall.avg} ppm" } ?: ""),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -224,6 +225,7 @@ object ShareText {
                 s.warmup?.let { appendLine("  🚴 Bici ${Fmt.minutes(it.durationSec)}") }
                 for (e in s.exercises) appendLine("  • ${Catalog.name(e.exerciseId)}: ${Fmt.setsLine(e.sets)}")
                 s.cooldown?.let { appendLine("  🚴 Bici ${Fmt.minutes(it.durationSec)}") }
+                s.heart?.let { appendLine("  ❤️ Pulso medio ${it.overall.avg} · máx ${it.overall.max} ppm") }
             }
         }.trimEnd()
     }

@@ -36,6 +36,14 @@ class Repository(private val dir: File) {
         write(HISTORY, list)
     }
 
+    /** Guarda el pulso leído más tarde de Health Connect, sin tocar el resto de la sesión. */
+    @Synchronized
+    fun updateHeart(id: String, heart: HeartData) {
+        val list = _history.value.map { if (it.id == id) it.copy(heart = heart) else it }
+        _history.value = list
+        write(HISTORY, list)
+    }
+
     @Synchronized
     fun deleteSession(id: String) {
         val list = _history.value.filter { it.id != id }
